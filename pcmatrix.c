@@ -81,7 +81,7 @@ int main (int argc, char * argv[])
     }
     printf("USING: worker_threads=%d bounded_buffer_size=%d matricies=%d matrix_mode=%d\n",numw,BOUNDED_BUFFER_SIZE,NUMBER_OF_MATRICES,MATRIX_MODE);
   }
-  bigmatrix = (Matrix **) malloc(sizeof(Matrix *) * BOUNDED_BUFFER_SIZE);
+  bigmatrix = (Matrix **) malloc(sizeof(Matrix *) * MAX);
 
   time_t t;
   // Seed the random number generator with the system time
@@ -126,11 +126,25 @@ int main (int argc, char * argv[])
   pthread_t pr;
   pthread_t co;
 
-  int prs = 0;
-  int cos = 0;
-  int prodtot = 0;
-  int constot = 0;
-  int consmul = 0;
+  int prs = 0;      // Number of producer threads.
+  int cos = 0;      // Number of consumer threads.
+  int prodtot = 0;  // Number of matrices produced.
+  int constot = 0;  // Number of matrices consumed.
+  int consmul = 0;  // Number of matrices multiplied.
+
+
+  //initialize the  counters
+  __counters_t counters;
+  //initialize the producer counter
+  __counter_t prodInit;
+  init_cnt(prodInit);
+  counters->prod = prodInit;
+  //initialize the consumer counter
+  __counter_t conInit
+  init_cnt(conInit);
+  counters->cons = conInit
+
+
 
   // consume ProdConsStats from producer and consumer threads
   // add up total matrix stats in prs, cos, prodtot, constot, consmul
