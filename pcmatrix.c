@@ -126,23 +126,23 @@ int main (int argc, char * argv[])
   pthread_t pr;
   pthread_t co;
 
-  int prs = 0;      // Number of producer threads.
-  int cos = 0;      // Number of consumer threads.
+  int prs = 0;      // Sum of matrix elements produced.
+  int cos = 0;      // Sum of matrix elements consumed.
   int prodtot = 0;  // Number of matrices produced.
   int constot = 0;  // Number of matrices consumed.
   int consmul = 0;  // Number of matrices multiplied.
 
 
   //initialize the  counters
-  __counters_t counters;
+  struct __counters_t counters;
   //initialize the producer counter
-  __counter_t prodInit;
-  init_cnt(prodInit);
-  counters->prod = prodInit;
+  struct __counter_t prodInit;
+  init_cnt(&prodInit);
+  counters.prod = &prodInit;
   //initialize the consumer counter
-  __counter_t conInit
-  init_cnt(conInit);
-  counters->cons = conInit
+  struct __counter_t conInit;
+  init_cnt(&conInit);
+  counters.cons = &conInit;
 
 
 
