@@ -34,7 +34,7 @@ int cons_ptr = 0;      // Index variable for where consumers take new Matrices f
 // Producer consumer data structures
 
 // Bounded buffer bigmatrix defined in prodcons.h
-// Matrix ** bigmatrix;
+// bigmatrix = (Matrix**) malloc(sizeof(Matrix) * MAX);
 
 /*
   Takes a pointer to a Matrix and adds that Matrix to the buffer.
