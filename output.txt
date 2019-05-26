@@ -1,0 +1,135 @@
+*Here are the two possible outputs that error out...
+
+jeremy@jeremy-VirtualBox:~/Documents/A2/OSA2$ ./pcMatrix
+USING DEFAULTS: worker_threads=1 bounded_buffer_size=200 matricies=1200 matrix_mode=0
+Producing 1200 matrices in mode 0.
+Using a shared buffer of size=200
+With 1 producer and consumer thread(s).
+
+incrementing
+Welcome to the producer thread...
+testing increment 1
+in waiting producer
+Welcome to the producer thread...
+matrix 1
+|  4|
+|  5|
+|  8|
+|  9|
+matrix 2
+|  5  10   4   8|
+MULTIPLY (4 x 1) BY (1 x 4):
+|  4|
+|  5|
+|  8|
+|  9|
+    X
+|  5  10   4   8|
+    =
+| 20  40  16  32|
+| 25  50  20  40|
+| 40  80  32  64|
+| 45  90  36  72|
+
+in waiting producer
+matrix 1
+|  1   6   8   6|
+|  6   6  10   4|
+|  6   9   2   9|
+|  1   2   8   4|
+matrix 2
+|  6   8   1|
+|  5   7   3|
+|  4   3   3|
+MULTIPLY (4 x 4) BY (4 x 1):
+|  1   6   8   6|
+|  6   6  10   4|
+|  6   9   2   9|
+|  1   2   8   4|
+    X
+|  8|
+|  1|
+|  1|
+|  3|
+    =
+| 40|
+| 76|
+| 86|
+| 30|
+
+in waiting producer
+matrix 1
+| 10   5   8|
+|  4  10   6|
+|  7  10   6|
+| 10   9   9|
+matrix 2
+|  6  10   7|
+| 10   8   9|
+MULTIPLY (4 x 3) BY (3 x 1):
+| 10   5   8|
+|  4  10   6|
+|  7  10   6|
+| 10   9   9|
+    X
+|  9|
+| 10|
+|  7|
+    =
+|196|
+|178|
+|205|
+|243|
+
+in waiting producer
+matrix 1
+|  7   7   9|
+matrix 2
+|  1|
+MULTIPLY (1 x 3) BY (3 x 2):
+|  7   7   9|
+    X
+|  1   4|
+|  3   7|
+|  3   2|
+    =
+| 55  95|
+
+* ... it continues
+
+matrix 1
+|  6   5  10   6|
+|  1   6   4   7|
+|  3   7   5   5|
+|  4   1   6   6|
+matrix 2
+|  6   8   4|
+Segmentation fault (core dumped)
+
+*notice here that it cannot be multiplied and a seq fault happens
+*another error that can happen
+*...
+MULTIPLY (2 x 4) BY (4 x 3):
+|  6   2  10   3|
+| 10   1   2   6|
+    X
+|  4  10   6|
+|  5   9   9|
+|  5   9  10|
+|  2   3   8|
+    =
+| 90 177 178|
+| 67 145 137|
+
+matrix 1
+|  6   4   4   3|
+matrix 2
+DisplayMatrix: EMPTY matrix
+m1=0x7fcee0003dc0  m2=(nil)!
+Segmentation fault (core dumped)
+
+*notice here that matrix 2 is empty so it seg faults from that.
+*we would have to inspect the producer threads and the consumer.
+*my thought is that the one of the threads is holding up
+*and wont produce or consume anything.
+*it most likly is the producer thread though.

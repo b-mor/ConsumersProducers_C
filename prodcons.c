@@ -21,8 +21,8 @@
 
 
 // Define Locks and Condition variables here
-pthread_cond_t condition;   // Condition variable that threads will check.
-pthread_mutex_t mutex;  // Lock that threads will acquire to do work.
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;   // Condition variable that threads will check.
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;  // Lock that threads will acquire to do work.
 
 // full starts at 0 (false), empty starts at 1 (true).
 pthread_cond_t full;   // Producers should check, if 1, buffer is full, don't produce.
@@ -51,7 +51,7 @@ int put(Matrix * value)
     // the end of the buffer's capacity.
     prod_ptr = (prod_ptr + 1) % MAX;
     count++;
-    return prod_ptr;
+    return 0;
 }
 
 /*
@@ -75,10 +75,20 @@ Matrix * get()
 //TODO put in and test if this works
 void *prod_worker(void *arg)
 {
+  counters_t *myCounters = arg;
+  printf("incrementing\n");
+  increment_cnt(myCounters->prod);
+  #if OUTPUT
+  printf("Welcome to the producer thread...\n");
+  printf("testing increment %d\n", get_cnt(myCounters->prod));
+  #endif
   int i;
   for (i = 0; i < LOOPS; i++) {
     pthread_mutex_lock(&mutex);
     while (count == MAX) {
+      #if OUTPUT
+      printf("in waiting producer\n");
+      #endif
       pthread_cond_wait(&empty, &mutex);
     }
     put(GenMatrixRandom());
@@ -90,15 +100,34 @@ void *prod_worker(void *arg)
 // Matrix CONSUMER worker thread
 void *cons_worker(void *arg)
 {
+  #if OUTPUT
+  printf("Welcome to the producer thread...\n");
+  #endif
   int i;
   for (i = 0; i < LOOPS; i++) {
     pthread_mutex_lock(&mutex);
     while (count == 0)
       pthread_cond_wait(&full, &mutex);
-    Matrix *temp = get();
-    // TODO: While in the critical section, and after getting the Matrix
-    //       from the buffer, perform some work here (matrix multiplication).
-
+    Matrix *m1 = get();
+    Matrix *m2 = get();
+    #if OUTPUT
+    printf("matrix 1\n");
+    DisplayMatrix(m1, stdout);
+    printf("matrix 2\n");
+    DisplayMatrix(m2, stdout);
+    #endif
+    Matrix *m3 = MatrixMultiply(m1, m2); //this is the resultant matrix
+    while (m3 == NULL) { //problem probbably starts here... most likly supposed
+      FreeMatrix(m2);
+      m2 = get();
+      m3 = MatrixMultiply(m1,m2);
+    }
+    DisplayMatrix(m1,stdout);
+    printf("    X\n");
+    DisplayMatrix(m2,stdout);
+    printf("    =\n");
+    DisplayMatrix(m3,stdout);
+    printf("\n");
     pthread_cond_signal(&empty);
     pthread_mutex_unlock(&mutex);
 

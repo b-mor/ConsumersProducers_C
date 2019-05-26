@@ -91,32 +91,32 @@ int main (int argc, char * argv[])
   // Demonstration code to show the use of matrix routines
   //
   // DELETE THIS CODE ON ASSIGNMENT 2 SUBMISSION
-  // ----------------------------------------------------------
-  printf("MATRIX MULTIPLICATION DEMO:\n\n");
-  Matrix *m1, *m2, *m3;
-  for (int i=0;i<NUMBER_OF_MATRICES;i++)
-  {
-    m1 = GenMatrixRandom();
-    m2 = GenMatrixRandom();
-    m3 = MatrixMultiply(m1, m2);
-    if (m3 != NULL)
-    {
-      DisplayMatrix(m1,stdout);
-      printf("    X\n");
-      DisplayMatrix(m2,stdout);
-      printf("    =\n");
-      DisplayMatrix(m3,stdout);
-      printf("\n");
-      FreeMatrix(m3);
-      FreeMatrix(m2);
-      FreeMatrix(m1);
-      m1=NULL;
-      m2=NULL;
-      m3=NULL;
-    }
-  }
-  return 0;
-  // ----------------------------------------------------------
+  // // ----------------------------------------------------------
+  // printf("MATRIX MULTIPLICATION DEMO:\n\n");
+  // Matrix *m1, *m2, *m3;
+  // for (int i=0;i<NUMBER_OF_MATRICES;i++)
+  // {
+  //   m1 = GenMatrixRandom();
+  //   m2 = GenMatrixRandom();
+  //   m3 = MatrixMultiply(m1, m2);
+  //   if (m3 != NULL)
+  //   {
+  //     DisplayMatrix(m1,stdout);
+  //     printf("    X\n");
+  //     DisplayMatrix(m2,stdout);
+  //     printf("    =\n");
+  //     DisplayMatrix(m3,stdout);
+  //     printf("\n");
+  //     FreeMatrix(m3);
+  //     FreeMatrix(m2);
+  //     FreeMatrix(m1);
+  //     m1=NULL;
+  //     m2=NULL;
+  //     m3=NULL;
+  //   }
+  // }
+  // return 0;
+  // // ----------------------------------------------------------
 
   printf("Producing %d matrices in mode %d.\n",NUMBER_OF_MATRICES,MATRIX_MODE);
   printf("Using a shared buffer of size=%d\n", BOUNDED_BUFFER_SIZE);
@@ -134,15 +134,23 @@ int main (int argc, char * argv[])
 
 
   //initialize the  counters
-  struct __counters_t counters;
+  counters_t counters;
   //initialize the producer counter
-  struct __counter_t prodInit;
+  counter_t prodInit;
   init_cnt(&prodInit);
   counters.prod = &prodInit;
   //initialize the consumer counter
-  struct __counter_t conInit;
+  counter_t conInit;
   init_cnt(&conInit);
   counters.cons = &conInit;
+
+  //create a producer thread(s)
+  pthread_create(&pr, NULL, prod_worker, &counters);
+  //create the consumer thread(s)
+  pthread_create(&co, NULL, cons_worker, &counters);
+  //join the threads
+  pthread_join(pr,NULL);
+  pthread_join(co, NULL);
 
 
 
