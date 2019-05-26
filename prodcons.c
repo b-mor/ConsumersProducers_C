@@ -21,8 +21,8 @@
 
 
 // Define Locks and Condition variables here
-pthread_cond_t condition;   // Condition variable that threads will check.
-pthread_mutex_t mutex;  // Lock that threads will acquire to do work.
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;   // Condition variable that threads will check.
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;  // Lock that threads will acquire to do work.
 
 // full starts at 0 (false), empty starts at 1 (true).
 pthread_cond_t full;   // Producers should check, if 1, buffer is full, don't produce.
@@ -51,7 +51,7 @@ int put(Matrix * value)
     // the end of the buffer's capacity.
     prod_ptr = (prod_ptr + 1) % MAX;
     count++;
-    return prod_ptr;
+    return 0;
 }
 
 /*
@@ -75,10 +75,20 @@ Matrix * get()
 //TODO put in and test if this works
 void *prod_worker(void *arg)
 {
+  counters_t *myCounters = arg;
+  printf("incrementing\n");
+  increment_cnt(myCounters->prod);
+  #if OUTPUT
+  printf("Welcome to the producer thread...\n");
+  printf("testing increment %d\n", get_cnt(myCounters->prod));
+  #endif
   int i;
   for (i = 0; i < LOOPS; i++) {
     pthread_mutex_lock(&mutex);
     while (count == MAX) {
+      #if OUTPUT
+      printf("in waiting producer\n");
+      #endif
       pthread_cond_wait(&empty, &mutex);
     }
     put(GenMatrixRandom());

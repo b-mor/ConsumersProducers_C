@@ -70,7 +70,7 @@ void GenMatrix(Matrix * mat)
       else
         mm[j] = 1;
 #if OUTPUT
-      printf("matrix[%d][%d]=%d \n",i,j,mm[j]);
+      //printf("matrix[%d][%d]=%d \n",i,j,mm[j]);
 #endif
     }
   }

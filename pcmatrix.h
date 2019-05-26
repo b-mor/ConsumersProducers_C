@@ -11,7 +11,7 @@
 #define NUMWORK 1
 
 // Constant for enabling and disabling DEBUG output
-#define OUTPUT 0
+#define OUTPUT 1
 
 // Size of the buffer ARRAY  (see ch. 30, section 2, producer/consumer)
 #define MAX 200
