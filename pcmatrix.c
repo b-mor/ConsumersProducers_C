@@ -147,8 +147,10 @@ int main (int argc, char * argv[])
   //create a producer thread(s)
   pthread_create(&pr, NULL, prod_worker, &counters);
   //create the consumer thread(s)
+  pthread_create(&co, NULL, cons_worker, &counters);
   //join the threads
   pthread_join(pr,NULL);
+  pthread_join(co, NULL);
 
 
 
