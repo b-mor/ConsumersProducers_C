@@ -47,7 +47,7 @@ int cons_ptr = 0;      // Index variable for where consumers take new Matrices f
 int put(Matrix * value)
 {
     #if OUTPUT
-    printf("put count: %d\n", count);
+    printf("buffer size: %d\n", count);
     printf("prod_ptr: %d\n", prod_ptr);
     #endif
     bigmatrix[prod_ptr] = value;
@@ -66,7 +66,7 @@ int put(Matrix * value)
 Matrix * get()
 {
   #if OUTPUT
-  printf("get count: %d\n", count);
+  printf("buffer size: %d\n", count);
   #endif
     Matrix *temp = bigmatrix[cons_ptr];
     // Increment the index variable, setting it back to 0 if we've reached
@@ -84,17 +84,19 @@ Matrix * get()
 void *prod_worker(void *arg)
 {
   counters_t *myCounters = arg;
-  printf("incrementing\n");
   increment_cnt(myCounters->prod);
+
   #if OUTPUT
   printf("Welcome to the producer thread...\n");
-  printf("testing increment %d\n", get_cnt(myCounters->prod));
   #endif
+
   int i;
   for (i = 0; i < LOOPS; i++) {
+
     #if OUTPUT
     printf("producer loop: %d\n", i);
     #endif
+
     pthread_mutex_lock(&mutex);
     while (count == MAX) {
       #if OUTPUT
@@ -102,9 +104,6 @@ void *prod_worker(void *arg)
       #endif
       pthread_cond_wait(&empty, &mutex);
     }
-    #if OUTPUT
-    printf("putting in a random matrix\n");
-    #endif
     put(GenMatrixRandom());
     pthread_cond_signal(&fill);
     pthread_mutex_unlock(&mutex);
@@ -115,7 +114,7 @@ void *prod_worker(void *arg)
 void *cons_worker(void *arg)
 {
   #if OUTPUT
-  printf("Welcome to the producer thread...\n");
+  printf("Welcome to the consumer thread...\n");
   #endif
   int i;
   for (i = 0; i < LOOPS; i++) {
