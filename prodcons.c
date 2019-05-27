@@ -108,8 +108,8 @@ void *prod_worker(void *arg)
 
         prodStats->sumtotal += SumMatrix(m);
         #if OUTPUT
-        printf("current producer matrix total: %d\n", prodStats->sumtotal);
-        printf("prod ptr: %d\n", prod_ptr);
+        // printf("current producer matrix total: %d\n", prodStats->sumtotal);
+        // printf("prod ptr: %d\n", prod_ptr);
         #endif
         prodStats->matrixtotal++;
         pthread_cond_signal(&fill);
@@ -120,7 +120,7 @@ void *prod_worker(void *arg)
 // Matrix CONSUMER worker thread
 void *cons_worker(void *arg)
 {
-    ProdConsStats *consStats = arg;
+    ProdConsStats *conStats = arg;
     #if OUTPUT
     printf("Starting consumer thread.\n");
     #endif
@@ -138,7 +138,9 @@ void *cons_worker(void *arg)
         }
         Matrix *m1 = get();
         Matrix *m2 = get();
-
+        conStats->sumtotal += SumMatrix(m1);
+        conStats->sumtotal += SumMatrix(m2);
+        conStats->matrixtotal += 2;
         /**
         #if OUTPUT
         printf("matrix 1\n");
@@ -174,13 +176,15 @@ void *cons_worker(void *arg)
             printf("    =\n");
             DisplayMatrix(m3,stdout);
             printf("\n");
+
+            conStats->multtotal++;
             FreeMatrix(m1);
             FreeMatrix(m2);
             FreeMatrix(m3);
 
         } else {    // Handle freeing matrices if multiply doesn't work.
             printf("Matrices were incompatible.\n\n");
-            FreeMatrix(m1);
+            //FreeMatrix(m1);
             FreeMatrix(m2);
         }
 
