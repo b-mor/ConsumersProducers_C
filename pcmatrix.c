@@ -170,6 +170,9 @@ int main (int argc, char * argv[])
   // add up total matrix stats in prs, cos, prodtot, constot, consmul
   prs = proStats.sumtotal;
   prodtot = proStats.matrixtotal;
+  cos = conStats.sumtotal;
+  constot = conStats.matrixtotal;
+  consmul = conStats.multtotal;
   printf("Sum of Matrix elements --> Produced=%d = Consumed=%d\n",prs,cos);
   printf("Matrices produced=%d consumed=%d multiplied=%d\n",prodtot,constot,consmul);
 
