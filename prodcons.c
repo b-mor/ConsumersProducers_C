@@ -53,7 +53,7 @@ int put(Matrix * value)
     bigmatrix[prod_ptr] = value;
     prod_ptr = (prod_ptr + 1) % MAX;
     count++;
-    return 0;
+    return prod_ptr;
 }
 
 /*
@@ -83,28 +83,35 @@ Matrix * get()
 //TODO put in and test if this works
 void *prod_worker(void *arg)
 {
-    counters_t *myCounters = arg;
-    increment_cnt(myCounters->prod);
+    ProdConsStats *prodStats = arg;
 
     #if OUTPUT
     printf("Starting producer thread.\n");
     #endif
 
     int i;
-    for (i = 0; i < LOOPS; i++) { // Producing Matrix loop.
+    for (i = 0; i < NUMBER_OF_MATRICES; i++) { // Producing Matrix loop.
 
         #if OUTPUT
-        //printf("producer loop: %d\n", i);
+        printf("producer loop: %d\n", i);
         #endif
 
         pthread_mutex_lock(&mutex);
-        while (count == MAX) {
+        while (count == BOUNDED_BUFFER_SIZE) {
             #if OUTPUT
             printf("*** BUFFER FULL, producer is waiting. ***\n\n");
             #endif
             pthread_cond_wait(&empty, &mutex);
         }
-        put(GenMatrixRandom());
+        Matrix *m = GenMatrixRandom();
+        put(m);
+
+        prodStats->sumtotal += SumMatrix(m);
+        #if OUTPUT
+        printf("current producer matrix total: %d\n", prodStats->sumtotal);
+        printf("prod ptr: %d\n", prod_ptr);
+        #endif
+        prodStats->matrixtotal++;
         pthread_cond_signal(&fill);
         pthread_mutex_unlock(&mutex);
     }
@@ -113,11 +120,12 @@ void *prod_worker(void *arg)
 // Matrix CONSUMER worker thread
 void *cons_worker(void *arg)
 {
+    ProdConsStats *consStats = arg;
     #if OUTPUT
     printf("Starting consumer thread.\n");
     #endif
     int i;
-    for (i = 0; i < LOOPS; i += 2) {
+    for (i = 0; i < NUMBER_OF_MATRICES; i += 2) {
         #if OUTPUT
         // printf("consumer loop: %d\n", i);
         #endif

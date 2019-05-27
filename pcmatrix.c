@@ -126,6 +126,10 @@ int main (int argc, char * argv[])
   pthread_t pr;
   pthread_t co;
 
+  /* this is for later for the mutltiple producers and consumers */
+  // pthread_t pr[numw];
+  // pthread_t co[numw];
+
   int prs = 0;      // Sum of matrix elements produced.
   int cos = 0;      // Sum of matrix elements consumed.
   int prodtot = 0;  // Number of matrices produced.
@@ -144,19 +148,28 @@ int main (int argc, char * argv[])
   init_cnt(&conInit);
   counters.cons = &conInit;
 
+  //this struct helps keep track of elements of matrices produced
+  ProdConsStats proStats = {prs, 0, prodtot};
+  ProdConsStats conStats = {cos, consmul, constot};
+
   //create a producer thread(s)
-  pthread_create(&pr, NULL, prod_worker, &counters);
+  pthread_create(&pr, NULL, prod_worker, &proStats);
   //create the consumer thread(s)
-  pthread_create(&co, NULL, cons_worker, &counters);
+  pthread_create(&co, NULL, cons_worker, &conStats);
   //join the threads
   pthread_join(pr,NULL);
   pthread_join(co, NULL);
+
+  #if OUTPUT
+  printf("---threads joined---\n");
+  #endif
 
 
 
   // consume ProdConsStats from producer and consumer threads
   // add up total matrix stats in prs, cos, prodtot, constot, consmul
-
+  prs = proStats.sumtotal;
+  prodtot = proStats.matrixtotal;
   printf("Sum of Matrix elements --> Produced=%d = Consumed=%d\n",prs,cos);
   printf("Matrices produced=%d consumed=%d multiplied=%d\n",prodtot,constot,consmul);
 
