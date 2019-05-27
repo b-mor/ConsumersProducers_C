@@ -142,7 +142,7 @@ void *cons_worker(void *arg)
       FreeMatrix(m2);
       while (count == 0) {
         #if OUTPUT
-        printf("in waiting producer\n");
+        printf("in waiting consumer INNER LOOP\n");
         #endif
         pthread_cond_wait(&fill, &mutex);
       }
