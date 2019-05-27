@@ -81,6 +81,8 @@ int main (int argc, char * argv[])
     }
     printf("USING: worker_threads=%d bounded_buffer_size=%d matricies=%d matrix_mode=%d\n",numw,BOUNDED_BUFFER_SIZE,NUMBER_OF_MATRICES,MATRIX_MODE);
   }
+
+  // Allocate the buffer.
   bigmatrix = (Matrix **) malloc(sizeof(Matrix *) * MAX);
 
   time_t t;
@@ -118,17 +120,14 @@ int main (int argc, char * argv[])
   // return 0;
   // // ----------------------------------------------------------
 
-  printf("Producing %d matrices in mode %d.\n",NUMBER_OF_MATRICES,MATRIX_MODE);
-  printf("Using a shared buffer of size=%d\n", BOUNDED_BUFFER_SIZE);
-  printf("With %d producer and consumer thread(s).\n",numw);
-  printf("\n");
 
-  pthread_t pr;
-  pthread_t co;
+
+  // pthread_t pr;
+  // pthread_t co;
 
   /* this is for later for the mutltiple producers and consumers */
-  // pthread_t pr[numw];
-  // pthread_t co[numw];
+  pthread_t pr[numw];
+  pthread_t co[numw];
 
   int prs = 0;      // Sum of matrix elements produced.
   int cos = 0;      // Sum of matrix elements consumed.
@@ -153,12 +152,27 @@ int main (int argc, char * argv[])
   ProdConsStats conStats = {cos, consmul, constot};
 
   //create a producer thread(s)
-  pthread_create(&pr, NULL, prod_worker, &proStats);
+  //pthread_create(&pr, NULL, prod_worker, &proStats);
+  int i;
+  for (i = 0; i < numw; i++) {
+      pthread_create(&pr[i], NULL, prod_worker, &proStats);
+  }
+
+
   //create the consumer thread(s)
-  pthread_create(&co, NULL, cons_worker, &conStats);
+  // pthread_create(&co, NULL, cons_worker, &conStats);
+  for (i = 0; i < numw; i++) {
+      pthread_create(&co[i], NULL, cons_worker, &conStats);
+  }
   //join the threads
-  pthread_join(pr,NULL);
-  pthread_join(co, NULL);
+  //pthread_join(pr,NULL);
+  //pthread_join(co, NULL);
+
+  for (i = 0; i < numw; i++) {
+      pthread_join(pr[i], NULL);
+      pthread_join(co[i], NULL);
+  }
+
 
   #if OUTPUT
   printf("---threads joined---\n");
