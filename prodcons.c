@@ -30,6 +30,8 @@ pthread_cond_t empty = PTHREAD_COND_INITIALIZER;  // Consumers should check, if 
 int count = 0;         // Counter variable keeps track of the "size" of our buffer.
 int prod_ptr = 0;      // Index variable for where producers insert new Matrices in the buffer.
 int cons_ptr = 0;      // Index variable for where consumers take new Matrices from in buffer.
+int totalMade = 0;
+int totalConsumed = 0;
 
 // Producer consumer data structures
 
@@ -53,7 +55,8 @@ int put(Matrix * value)
     bigmatrix[prod_ptr] = value;
     prod_ptr = (prod_ptr + 1) % MAX;
     count++;
-    return prod_ptr;
+    totalMade++;
+    return totalMade;
 }
 
 /*
@@ -76,6 +79,7 @@ Matrix * get()
     //printf("cons ptr: %d\n", cons_ptr);
     #endif
     count--;
+    totalConsumed++;
     return temp;
 }
 
@@ -89,7 +93,7 @@ void *prod_worker(void *arg)
     printf("Starting producer thread.\n");
     #endif
 
-    int i;
+    int i, j;
     for (i = 0; i < NUMBER_OF_MATRICES; i++) { // Producing Matrix loop.
 
         #if OUTPUT
@@ -104,17 +108,19 @@ void *prod_worker(void *arg)
             pthread_cond_wait(&empty, &mutex);
         }
         Matrix *m = GenMatrixRandom();
-        put(m);
+        i = put(m);
+        j++;    // counts how many matrices this particular thread has made.
 
         prodStats->sumtotal += SumMatrix(m);
-        #if OUTPUT
-        // printf("current producer matrix total: %d\n", prodStats->sumtotal);
-        // printf("prod ptr: %d\n", prod_ptr);
-        #endif
         prodStats->matrixtotal++;
         pthread_cond_signal(&fill);
         pthread_mutex_unlock(&mutex);
     }
+
+    printf("Producer thread done.\nI made %d matrices.\n",j);
+    printf("Total matrices made: %d\n", totalMade);
+    pthread_cond_broadcast(&fill);
+
 }
 
 // Matrix CONSUMER worker thread
@@ -127,66 +133,43 @@ void *cons_worker(void *arg)
     int i;
     for (i = 0; i < NUMBER_OF_MATRICES; i += 2) {
         #if OUTPUT
-        // printf("consumer loop: %d\n", i);
         #endif
         pthread_mutex_lock(&mutex);
-        while (count < 2) {  // Make sure we have two matrices to multiply.
+        while (count < 2 && totalMade != NUMBER_OF_MATRICES) {  // Make sure we have two matrices to multiply.
             #if OUTPUT
             printf("*** BUFFER EMPTY, consumer is waiting. ***\n\n");
             #endif
             pthread_cond_wait(&fill, &mutex);
         }
-        Matrix *m1 = get();
-        Matrix *m2 = get();
-        conStats->sumtotal += SumMatrix(m1);
-        conStats->sumtotal += SumMatrix(m2);
-        conStats->matrixtotal += 2;
-        /**
-        #if OUTPUT
-        printf("matrix 1\n");
-        DisplayMatrix(m1, stdout);
-        printf("matrix 2\n");
-        DisplayMatrix(m2, stdout);
-        #endif
-        */
 
-        Matrix *m3 = MatrixMultiply(m1, m2); //this is the resultant matrix
-/**         while (m3 == NULL) { // Check if multiplication was successful.
-            while (count <= 0) {    // Check buffer for being empty
-                #if OUTPUT
-                printf("in waiting consumer INNER LOOP\n");
-                #endif
-                pthread_cond_wait(&fill, &mutex);
-            }
+        if (totalConsumed < NUMBER_OF_MATRICES) {
+            Matrix *m1 = get();
+            Matrix *m2 = get();
+            conStats->sumtotal += SumMatrix(m1);
+            conStats->sumtotal += SumMatrix(m2);
+            conStats->matrixtotal += 2;
 
-            if (count > 1) {
-                printf("Inside new check\n");
-                printf("Buffer size: %d\n", count);
+            Matrix *m3 = MatrixMultiply(m1, m2); //this is the resultant matrix
+
+            if (m3 != NULL) {  // If successfully multiplied, show results.
+                DisplayMatrix(m1,stdout);
+                printf("    X\n");
+                DisplayMatrix(m2,stdout);
+                printf("    =\n");
+                DisplayMatrix(m3,stdout);
+                printf("\n");
+
+                conStats->multtotal++;
+                FreeMatrix(m1);
                 FreeMatrix(m2);
-                m2 = get();
-                m3 = MatrixMultiply(m1,m2);
+                FreeMatrix(m3);
+
+            } else {    // Handle freeing matrices if multiply doesn't work.
+                printf("Matrices were incompatible.\n\n");
+                FreeMatrix(m2);
             }
         }
 
-                                                         */
-        if (m3 != NULL) {  // If successfully multiplied, show results.
-            DisplayMatrix(m1,stdout);
-            printf("    X\n");
-            DisplayMatrix(m2,stdout);
-            printf("    =\n");
-            DisplayMatrix(m3,stdout);
-            printf("\n");
-
-            conStats->multtotal++;
-            FreeMatrix(m1);
-            FreeMatrix(m2);
-            FreeMatrix(m3);
-
-        } else {    // Handle freeing matrices if multiply doesn't work.
-            printf("Matrices were incompatible.\n\n");
-            //FreeMatrix(m1);
-            FreeMatrix(m2);
-        }
 
         pthread_cond_signal(&empty);
         pthread_mutex_unlock(&mutex);
