@@ -24,6 +24,9 @@
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;   // Condition variable that threads will check.
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;  // Lock that threads will acquire to do work.
 
+pthread_mutex_t countLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t countCond = PTHREAD_COND_INITIALIZER;
+
 // full starts at 0 (false), empty starts at 1 (true).
 pthread_cond_t fill = PTHREAD_COND_INITIALIZER;   // Producers should check, if 1, buffer is full, don't produce.
 pthread_cond_t empty = PTHREAD_COND_INITIALIZER;  // Consumers should check, if 1, buffer is empty, don't consume.
@@ -34,6 +37,7 @@ int totalMade = 0;
 int totalConsumed = 0;
 
 // Producer consumer data structures
+counter_t prodCount;
 
 // Bounded buffer bigmatrix defined in prodcons.h
 // bigmatrix = (Matrix**) malloc(sizeof(Matrix) * MAX);
@@ -93,6 +97,8 @@ void *prod_worker(void *arg)
     printf("Starting producer thread.\n");
     #endif
 
+
+
     int i = 0, j;
     while (i <= NUMBER_OF_MATRICES) { // Producing Matrix loop.
         if(i >= NUMBER_OF_MATRICES) {
@@ -101,7 +107,7 @@ void *prod_worker(void *arg)
         #if OUTPUT
         printf("producer loop: %d\n", i);
         #endif
-
+        Matrix *m;
         pthread_mutex_lock(&mutex);
         while (count == BOUNDED_BUFFER_SIZE) {
             #if OUTPUT
@@ -109,10 +115,22 @@ void *prod_worker(void *arg)
             #endif
             pthread_cond_wait(&empty, &mutex);
         }
-        Matrix *m = GenMatrixRandom();
+        if (DEFAULT_MATRIX_MODE == 0) {
+          m = GenMatrixRandom();
+        } else {
+          m = GenMatrixBySize(DEFAULT_MATRIX_MODE, DEFAULT_MATRIX_MODE);
+        }
+
+        if(i >= NUMBER_OF_MATRICES) {
+          #if OUTPUT
+          printf("goto: %d\n", i);
+          #endif
+          break;
+        }
+        pthread_mutex_lock(&countLock);
         i = put(m);
         j++;    // counts how many matrices this particular thread has made.
-
+        pthread_mutex_unlock(&countLock);
         prodStats->sumtotal += SumMatrix(m);
         prodStats->matrixtotal++;
         pthread_cond_signal(&fill);
