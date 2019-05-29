@@ -93,9 +93,11 @@ void *prod_worker(void *arg)
     printf("Starting producer thread.\n");
     #endif
 
-    int i, j;
-    for (i = 0; i < NUMBER_OF_MATRICES; i++) { // Producing Matrix loop.
-
+    int i = 0, j;
+    while (i <= NUMBER_OF_MATRICES) { // Producing Matrix loop.
+        if(i >= NUMBER_OF_MATRICES) {
+          goto final;
+        }
         #if OUTPUT
         printf("producer loop: %d\n", i);
         #endif
@@ -116,7 +118,7 @@ void *prod_worker(void *arg)
         pthread_cond_signal(&fill);
         pthread_mutex_unlock(&mutex);
     }
-
+    final:
     printf("Producer thread done.\nI made %d matrices.\n",j);
     printf("Total matrices made: %d\n", totalMade);
     pthread_cond_broadcast(&fill);
@@ -135,8 +137,10 @@ void *cons_worker(void *arg)
         #if OUTPUT
         #endif
         pthread_mutex_lock(&mutex);
-        while (count < 2 && totalMade != NUMBER_OF_MATRICES) {  // Make sure we have two matrices to multiply.
+        while (count < 2 && totalMade <= NUMBER_OF_MATRICES) {  // Make sure we have two matrices to multiply.
             #if OUTPUT
+            printf("count: %d\n", count);
+            printf("totalMade : %d\n", totalMade);
             printf("*** BUFFER EMPTY, consumer is waiting. ***\n\n");
             #endif
             pthread_cond_wait(&fill, &mutex);
