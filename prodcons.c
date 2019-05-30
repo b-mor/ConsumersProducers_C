@@ -39,9 +39,6 @@ int totalConsumed = 0;
 // Producer consumer data structures
 counter_t prodCount;
 
-// Bounded buffer bigmatrix defined in prodcons.h
-// bigmatrix = (Matrix**) malloc(sizeof(Matrix) * MAX);
-
 /*
 Takes a pointer to a Matrix and adds that Matrix to the buffer.
 Does not handle checking of buffer space or availability, all
@@ -72,64 +69,39 @@ all coverage must be handled by the calling worker thread.
 */
 Matrix * get()
 {
-    #if OUTPUT
-    //printf("buffer size: %d\n", count);
-    #endif
-    Matrix *temp = bigmatrix[cons_ptr];
-    // Increment the index variable, setting it back to 0 if we've reached
-    // the end of the buffer's capacity.
-    cons_ptr = (cons_ptr + 1) % MAX;
-    #if OUTPUT
-    //printf("cons ptr: %d\n", cons_ptr);
-    #endif
+    Matrix *temp = bigmatrix[cons_ptr]; // Fetch the Matrix at proper location in buffer.
+    cons_ptr = (cons_ptr + 1) % MAX;    // Bound checking for consumer pointer.
     count--;
     totalConsumed++;
-    return temp;
+    return temp;                        // Return the fetched Matrix.
 }
 
-// Matrix PRODUCER worker thread
-//TODO put in and test if this works
+/*
+  Producer thread. Generates matrices to be stored in the shared buffer for consumer threads.
+*/
 void *prod_worker(void *arg)
 {
     ProdConsStats *prodStats = arg;
-
-    #if OUTPUT
-    printf("Starting producer thread.\n");
-    #endif
-
-
-
-    int i = 0, j;
+    int i = 0;
     while (i <= NUMBER_OF_MATRICES) { // Producing Matrix loop.
         if(i >= NUMBER_OF_MATRICES) {
           goto final;
         }
-        #if OUTPUT
-        printf("producer loop: %d\n", i);
-        #endif
+
         Matrix *m;
         pthread_mutex_lock(&mutex);
         while (count == BOUNDED_BUFFER_SIZE) {
-            #if OUTPUT
-            printf("*** BUFFER FULL, producer is waiting. ***\n\n");
-            #endif
             pthread_cond_wait(&empty, &mutex);
         }
+
         if (DEFAULT_MATRIX_MODE == 0) {
           m = GenMatrixRandom();
         } else {
           m = GenMatrixBySize(DEFAULT_MATRIX_MODE, DEFAULT_MATRIX_MODE);
         }
 
-        if(i >= NUMBER_OF_MATRICES) {
-          #if OUTPUT
-          printf("goto: %d\n", i);
-          #endif
-          break;
-        }
         pthread_mutex_lock(&countLock);
         i = put(m);
-        j++;    // counts how many matrices this particular thread has made.
         pthread_mutex_unlock(&countLock);
         prodStats->sumtotal += SumMatrix(m);
         prodStats->matrixtotal++;
@@ -137,30 +109,22 @@ void *prod_worker(void *arg)
         pthread_mutex_unlock(&mutex);
     }
     final:
-    printf("Producer thread done.\nI made %d matrices.\n",j);
-    printf("Total matrices made: %d\n", totalMade);
     pthread_cond_broadcast(&fill);
-
+    return NULL;
 }
 
-// Matrix CONSUMER worker thread
+/*
+  Consumer thread. Gets matrices from the shared buffer and performs matrix multiplication.
+*/
 void *cons_worker(void *arg)
 {
     ProdConsStats *conStats = arg;
-    #if OUTPUT
-    printf("Starting consumer thread.\n");
-    #endif
     int i;
     for (i = 0; i < NUMBER_OF_MATRICES; i += 2) {
         #if OUTPUT
         #endif
         pthread_mutex_lock(&mutex);
         while (count < 2 && totalMade <= NUMBER_OF_MATRICES) {  // Make sure we have two matrices to multiply.
-            #if OUTPUT
-            printf("count: %d\n", count);
-            printf("totalMade : %d\n", totalMade);
-            printf("*** BUFFER EMPTY, consumer is waiting. ***\n\n");
-            #endif
             pthread_cond_wait(&fill, &mutex);
         }
 
@@ -192,8 +156,9 @@ void *cons_worker(void *arg)
             }
         }
 
-
         pthread_cond_signal(&empty);
         pthread_mutex_unlock(&mutex);
     }
+
+    return NULL;
 }

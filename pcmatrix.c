@@ -82,106 +82,49 @@ int main (int argc, char * argv[])
     printf("USING: worker_threads=%d bounded_buffer_size=%d matricies=%d matrix_mode=%d\n",numw,BOUNDED_BUFFER_SIZE,NUMBER_OF_MATRICES,MATRIX_MODE);
   }
 
-  // Allocate the buffer.
-  bigmatrix = (Matrix **) malloc(sizeof(Matrix *) * MAX);
-
-  time_t t;
   // Seed the random number generator with the system time
+  time_t t;
   srand((unsigned) time(&t));
 
-  //
-  // Demonstration code to show the use of matrix routines
-  //
-  // DELETE THIS CODE ON ASSIGNMENT 2 SUBMISSION
-  // // ----------------------------------------------------------
-  // printf("MATRIX MULTIPLICATION DEMO:\n\n");
-  // Matrix *m1, *m2, *m3;
-  // for (int i=0;i<NUMBER_OF_MATRICES;i++)
-  // {
-  //   m1 = GenMatrixRandom();
-  //   m2 = GenMatrixRandom();
-  //   m3 = MatrixMultiply(m1, m2);
-  //   if (m3 != NULL)
-  //   {
-  //     DisplayMatrix(m1,stdout);
-  //     printf("    X\n");
-  //     DisplayMatrix(m2,stdout);
-  //     printf("    =\n");
-  //     DisplayMatrix(m3,stdout);
-  //     printf("\n");
-  //     FreeMatrix(m3);
-  //     FreeMatrix(m2);
-  //     FreeMatrix(m1);
-  //     m1=NULL;
-  //     m2=NULL;
-  //     m3=NULL;
-  //   }
-  // }
-  // return 0;
-  // // ----------------------------------------------------------
-
-
-
-  // pthread_t pr;
-  // pthread_t co;
-
-  /* this is for later for the mutltiple producers and consumers */
+  // Arrays that will hold the worker threads. numw determined by program args.
   pthread_t pr[numw];
   pthread_t co[numw];
 
+  // Set up counters for worker threads.
+  counters_t counters;
+  counter_t prodInit;       // Initialize the producer counter.
+  init_cnt(&prodInit);
+  counters.prod = &prodInit;
+  counter_t conInit;        // Initialize the consumer counter.
+  init_cnt(&conInit);
+  counters.cons = &conInit;
+
+  // Create statistic variables
   int prs = 0;      // Sum of matrix elements produced.
   int cos = 0;      // Sum of matrix elements consumed.
   int prodtot = 0;  // Number of matrices produced.
   int constot = 0;  // Number of matrices consumed.
   int consmul = 0;  // Number of matrices multiplied.
-
-
-  //initialize the  counters
-  counters_t counters;
-  //initialize the producer counter
-  counter_t prodInit;
-  init_cnt(&prodInit);
-  counters.prod = &prodInit;
-  //initialize the consumer counter
-  counter_t conInit;
-  init_cnt(&conInit);
-  counters.cons = &conInit;
-
-  //this struct helps keep track of elements of matrices produced
   ProdConsStats proStats = {prs, 0, prodtot};
   ProdConsStats conStats = {cos, consmul, constot};
 
-  //create a producer thread(s)
-  //pthread_create(&pr, NULL, prod_worker, &proStats);
+  // Allocate the buffer the worker threads will use.
+  bigmatrix = (Matrix **) malloc(sizeof(Matrix *) * MAX);
+
+  // Create and initialize the worker threads.
   int i;
   for (i = 0; i < numw; i++) {
       pthread_create(&pr[i], NULL, prod_worker, &proStats);
-  }
-
-
-  //create the consumer thread(s)
-  // pthread_create(&co, NULL, cons_worker, &conStats);
-  for (i = 0; i < numw; i++) {
       pthread_create(&co[i], NULL, cons_worker, &conStats);
   }
-  //join the threads
-  //pthread_join(pr,NULL);
-  //pthread_join(co, NULL);
 
+  // Join the worker threads when they are complete.
   for (i = 0; i < numw; i++) {
       pthread_join(pr[i], NULL);
       pthread_join(co[i], NULL);
   }
 
-
-  #if OUTPUT
-  printf("---threads joined---\n");
-  #endif
-
-
-
-  // consume ProdConsStats from producer and consumer threads
-  // add up total matrix stats in prs, cos, prodtot, constot, consmul
+  // Update statistic variables with final totals for display to user.
   prs = proStats.sumtotal;
   prodtot = proStats.matrixtotal;
   cos = conStats.sumtotal;
